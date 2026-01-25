@@ -41,7 +41,7 @@ export default function TabsLayout() {
         }}
       />
 
-      {/* COMMUNITY TAB */}
+      {/* FORUM TAB */}
       <Tabs.Screen
         name="forum"
         options={{

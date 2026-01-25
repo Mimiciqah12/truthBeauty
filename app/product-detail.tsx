@@ -23,10 +23,9 @@ import {
   Modal,
   Pressable,
   Alert,
-  useWindowDimensions, // <--- TAMBAH INI
+  useWindowDimensions,
 } from "react-native";
 
-/* ... (Kekalkan Type Product & Review sama macam tadi) ... */
 type Product = {
   id: string;
   product_name: string;
@@ -38,10 +37,12 @@ type Product = {
   suitable_for: string[];
   average_rating: number;
   review_count: number;
+  likes_count?: number; 
 };
 
 type Review = {
   id: string;
+  userId: string; 
   avatar: string;
   username: string;
   rating: number;
@@ -61,11 +62,56 @@ const EMPTY_PRODUCT: Product = {
   review_count: 0,
 };
 
+const ReviewCard = ({ review }: { review: Review }) => {
+  const [userData, setUserData] = useState<any>(null);
+  
+  const tempName = review.username || "User";
+  const defaultAvatar = `https://ui-avatars.com/api/?name=${tempName}&background=random&color=fff`;
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (review.userId) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", review.userId));
+          if (userDoc.exists()) {
+            setUserData(userDoc.data());
+          }
+        } catch (error) {
+          console.log("Error fetch user:", error);
+        }
+      }
+    };
+    fetchUser();
+  }, [review.userId]);
+
+  const displayName = userData?.displayName || userData?.username || userData?.name || review.username || "User";
+  const displayImage = userData?.photoURL || review.avatar || defaultAvatar;
+
+  return (
+    <View style={styles.reviewCard}>
+      <Image
+        source={{ uri: displayImage }}
+        style={styles.avatar}
+      />
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontWeight: "700" }}>{displayName}</Text>
+        <View style={{ flexDirection: "row", marginVertical: 2 }}>
+          {Array.from({ length: review.rating }).map((_, i) => (
+            <Text key={i} style={{fontSize: 12}}>
+                {i < review.rating ? "⭐" : "☆"}
+            </Text>
+          ))}
+        </View>
+        <Text style={{ marginTop: 2, color: '#444', lineHeight: 20 }}>{review.comment}</Text>
+      </View>
+    </View>
+  );
+};
+
 export default function ProductDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { width } = useWindowDimensions(); // <--- DAPATKAN LEBAR SKRIN
-  const isTablet = width > 700; // <--- CHECK KALAU TABLET
-
+  const { width } = useWindowDimensions();
+  const isTablet = width > 700;
   const [product, setProduct] = useState<Product>(EMPTY_PRODUCT);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [text, setText] = useState("");
@@ -74,8 +120,6 @@ export default function ProductDetail() {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
 
-  // ... (Kekalkan function handlePostReview, handleToggleLike, useEffect sama) ...
-  // Sila copy paste logic function tadi di sini (saya ringkaskan ruang ni)
   const handlePostReview = async () => {
     if (!text.trim() || rating === 0) {
       Alert.alert("Incomplete", "Please add rating & review");
@@ -89,10 +133,11 @@ export default function ProductDetail() {
       await addDoc(collection(db, "reviews"), {
         productId: id,
         userId: auth.currentUser.uid,
-        username: auth.currentUser.displayName || "User",
-        avatar: auth.currentUser.photoURL || `https://ui-avatars.com/api/?name=${auth.currentUser.displayName}`,
+        username: auth.currentUser.displayName || "User", 
+        avatar: auth.currentUser.photoURL || "",
         rating,
         comment: text,
+        createdAt: new Date(),
       });
       setText("");
       setRating(0);
@@ -173,12 +218,10 @@ export default function ProductDetail() {
   return (
     <ScrollView 
         style={styles.container} 
-        contentContainerStyle={{ alignItems: 'center' }} // Center content for tablet
+        contentContainerStyle={{ alignItems: 'center' }}
     >
-      {/* RESPONSIVE CONTAINER: Kalau tablet, kita limit width dia */}
       <View style={{ width: '100%', maxWidth: isTablet ? 700 : '100%' }}>
-          
-          {/* BACK */}
+
           <View style={styles.headerRow}>
             <TouchableOpacity onPress={() => router.back()}>
               <Text style={styles.back}>‹ Back</Text>
@@ -189,41 +232,56 @@ export default function ProductDetail() {
             </TouchableOpacity>
           </View>
 
-          {/* TOP CARD */}
           <View style={styles.topCard}>
             <Image source={{ uri: product.image }} style={styles.productImg} />
+            
             <View style={styles.topInfo}>
               <Text style={styles.title}>{product.product_name}</Text>
               <Text style={styles.brand}>{product.brand}</Text>
-              <View style={styles.ratingRow}>
-                <Text style={styles.star}>⭐ </Text>
-                <Text style={styles.ratingText}>{product.average_rating} out of 5 stars</Text>
+              
+              <View style={styles.statsContainer}>
+                  <View style={styles.ratingContainer}>
+                    <Text style={styles.star}>⭐</Text>
+                    <Text style={styles.ratingText}>
+                        {(product.average_rating || 0).toFixed(1)} out of 5 stars
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity onPress={handleToggleLike} style={styles.likeRow}>
+                    <Text style={styles.likeIcon}>{liked ? "❤️" : "🤍"}</Text>
+                    <Text style={styles.likeCount}>{likeCount} likes</Text>
+                  </TouchableOpacity>
               </View>
+
             </View>
           </View>
 
-          {/* LIKE ROW */}
-          <View style={styles.likeRow}>
-            <TouchableOpacity onPress={handleToggleLike}>
-              <Text style={styles.likeIcon}>{liked ? "❤️" : "🤍"}</Text>
-            </TouchableOpacity>
-            <Text style={styles.likeCount}>{likeCount} likes</Text>
-          </View>
-
-          {/* DESCRIPTION */}
           <Text style={styles.section}>Descriptions</Text>
           <Text style={styles.text}>{product.description}</Text>
 
-          {/* INGREDIENTS */}
           <Text style={styles.section}>Key Ingredients:</Text>
-          {/* LOGIC RESPONSIVE: Tablet align kiri, Phone align center */}
+          <Text style={styles.subHint}>✨ Tap any ingredient to analyze safety</Text>
+
           <View style={[styles.chips, isTablet ? { justifyContent: 'flex-start' } : { justifyContent: 'center' }]}>
-            {product.ingredient?.map((i) => (
-              <Text key={i} style={styles.chip}>{i}</Text>
+            {product.ingredient?.map((ingredientName) => (
+               <TouchableOpacity
+                key={ingredientName}
+                activeOpacity={0.7}
+                onPress={() => {
+                  router.push({
+                    pathname: "/ingredient-result",
+                    params: { 
+                      q: ingredientName,
+                      lang: 'en' 
+                    }
+                  });
+                }}
+              >
+                <Text style={styles.chip}>🔍 {ingredientName}</Text>
+              </TouchableOpacity>
             ))}
           </View>
 
-          {/* SUITABLE FOR (Bahagian yang awak nak cantikkan) */}
           <Text style={styles.section}>Suitable for:</Text>
           <View style={[styles.suitableWrap, isTablet ? { justifyContent: 'flex-start' } : { justifyContent: 'center' }]}>
             {product.suitable_for.map((s) => (
@@ -231,35 +289,19 @@ export default function ProductDetail() {
             ))}
           </View>
 
-          {/* REVIEWS */}
           <Text style={styles.section}>Community Reviews</Text>
           {reviews.length === 0 && (
             <Text style={{ color: "#ffd0d0ff" }}>No reviews yet</Text>
           )}
 
           {reviews.map((r) => (
-            <View key={r.id} style={styles.reviewCard}>
-              <Image
-                source={{ uri: r.avatar || `https://ui-avatars.com/api/?name=${r.username}` }}
-                style={styles.avatar}
-              />
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontWeight: "700" }}>{r.username}</Text>
-                <View style={{ flexDirection: "row" }}>
-                  {Array.from({ length: r.rating }).map((_, i) => (
-                    <Text key={i}>⭐</Text>
-                  ))}
-                </View>
-                <Text>{r.comment}</Text>
-              </View>
-            </View>
+            <ReviewCard key={r.id} review={r} />
           ))}
           
           <View style={{ height: 40 }} />
 
       </View>
 
-      {/* MODAL (Review) */}
       <Modal visible={showReview} transparent animationType="fade">
         <Pressable style={styles.modalOverlay} onPress={() => setShowReview(false)} />
         <View style={[styles.modalCard, isTablet && { width: 500 }]}> 
@@ -294,7 +336,6 @@ export default function ProductDetail() {
   );
 }
 
-/* ===== STYLES ===== */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -302,53 +343,132 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingTop: 50,
   },
-  back: { color: "#FF7AA2", marginBottom: 10, fontSize: 16 },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  plus: { fontSize: 28, fontWeight: "700", color: "#FF7AA2" },
-  topCard: { flexDirection: "row", gap: 14, marginBottom: 20 },
-  productImg: { width: 130, height: 130, borderRadius: 18, backgroundColor: "#fff" },
-  topInfo: { flex: 1, justifyContent: "center" },
-  ratingRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
-  star: { fontSize: 16, marginRight: 4 },
-  ratingText: { color: "#444" },
-  title: { fontSize: 22, fontWeight: "700", marginTop: -25 }, // Adjusted spacing
-  brand: { color: "#646464ff", marginBottom: 3, fontSize: 15, marginTop: 5 },
   
-  // Adjusted Like Row Logic
+  statsContainer: {
+    flexDirection: "column", 
+    alignItems: "flex-start", 
+    marginTop: 8,
+    gap: 6, 
+  },
+  
+  ratingContainer: {
+    flexDirection: "row", 
+    alignItems: "center",
+  },
+  
   likeRow: { 
     flexDirection: "row", 
     alignItems: "center", 
-    justifyContent: 'flex-end', // Pindah ke kanan sikit supaya tak langgar gambar
-    marginTop: -40, 
-    marginBottom: 2,
-    marginRight: 162,
+  },
+
+  back: { 
+    color: "#FF7AA2", 
+    marginBottom: 10, 
+    fontSize: 16 
+  },
+  headerRow: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    alignItems: "center", 
+    marginBottom: 10 
+  },
+  plus: { 
+    fontSize: 28, 
+    fontWeight: "700", 
+    color: "#FF7AA2" 
+  },
+  topCard: { 
+    flexDirection: "row", 
+    gap: 16, 
+    marginBottom: 20 
+  },
+  productImg: { 
+    width: 130, 
+    height: 130, 
+    borderRadius: 18, 
+    backgroundColor: "#fff" 
+  },
+  topInfo: { 
+    flex: 1, 
+    justifyContent: "center" 
+  },
+  
+  star: { 
+    fontSize: 16, 
+    marginRight: 6, 
+    color: "#FFC107"
+  },
+  ratingText: { 
+    color: "#555",
+    fontSize: 14,
+    fontWeight: "500"
   },
   likeIcon: { 
-    fontSize: 18 
+    fontSize: 16, 
+    marginRight: 6, 
   },
   likeCount: { 
-    marginLeft: 6, color: "#444", fontSize: 14 },
+    color: "#555", 
+    fontSize: 14,
+    fontWeight: "500" 
+  },
 
-  section: { marginTop: 16, marginBottom: 8, fontWeight: "700", fontSize: 17, color: "#2D2D2D" },
-  text: { color: "#444", lineHeight: 22, fontSize: 15.5 },
+  title: { 
+    fontSize: 20, 
+    fontWeight: "700", 
+    color: "#333",
+    marginBottom: 4
+  }, 
+  brand: { 
+    color: "#888", 
+    marginBottom: 6, 
+    fontSize: 14, 
+    fontWeight: "600"
+  },
 
-  // Updated Ingredient Chips
-  chips: { flexDirection: "row", flexWrap: "wrap", marginTop: 9, gap: 8 }, 
+  section: { 
+    marginTop: 16, 
+    marginBottom: 8, 
+    fontWeight: "700", 
+    fontSize: 17, 
+    color: "#2D2D2D" 
+  },
+  text: { 
+    color: "#444", 
+    lineHeight: 22, 
+    fontSize: 15.5 
+  },
+  chips: { 
+    flexDirection: "row", 
+    flexWrap: "wrap", 
+    marginTop: 9, 
+    gap: 8 
+  }, 
   chip: { 
-    backgroundColor: "#E6F2D8", 
+    backgroundColor: "#daf4bcff", 
     paddingHorizontal: 16, 
     paddingVertical: 8, 
     borderRadius: 20, 
     fontSize: 14.5, 
     color: "#4F6F3E", 
     fontWeight: "600",
-    overflow: 'hidden' // Untuk pastikan rounded corner cantik
+    overflow: 'hidden'
   },
-
-  // Updated Suitable For Chips
-  suitableWrap: { flexDirection: "row", flexWrap: "wrap", marginTop: 8, gap: 8 },
+  subHint: {
+    fontSize: 12,
+    color: "#888",
+    marginTop: -5,
+    marginBottom: 10,
+    fontStyle: 'italic',
+  },
+  suitableWrap: { 
+    flexDirection: "row", 
+    flexWrap: "wrap", 
+    marginTop: 8, 
+    gap: 8 
+  },
   chipPink: { 
-    backgroundColor: "#FFD7E6", 
+    backgroundColor: "#ffd2e2ff", 
     paddingHorizontal: 16, 
     paddingVertical: 8, 
     borderRadius: 20, 
@@ -357,7 +477,6 @@ const styles = StyleSheet.create({
     color: "#7A2E4A",
     overflow: 'hidden'
   },
-
   reviewCard: { 
     flexDirection: "row", 
     gap: 12, 
@@ -374,7 +493,6 @@ const styles = StyleSheet.create({
     borderRadius: 22, 
     backgroundColor: "#eee" 
   },
-  
   modalOverlay: { 
     position: "absolute", 
     top: 0, 
@@ -383,7 +501,6 @@ const styles = StyleSheet.create({
     bottom: 0, 
     backgroundColor: "rgba(0, 0, 0, 0.6)" 
   },
-
   modalCard: { 
     position: "absolute", 
     justifyContent: "center", 
@@ -395,8 +512,23 @@ const styles = StyleSheet.create({
     padding: 20, 
     elevation: 5 
   },
-
-  modalTitle: { fontSize: 18, fontWeight: "700", marginBottom: 12 },
-  modalInput: { backgroundColor: "#F9F9F9", borderRadius: 14, padding: 14, height: 100, textAlignVertical: "top", marginBottom: 10 },
-  modalBtnRow: { flexDirection: "row", justifyContent: "flex-end", gap: 20, marginTop: 10 },
+  modalTitle: { 
+    fontSize: 18, 
+    fontWeight: "700", 
+    marginBottom: 12 
+  },
+  modalInput: { 
+    backgroundColor: "#F9F9F9", 
+    borderRadius: 14, 
+    padding: 14, 
+    height: 100, 
+    textAlignVertical: "top", 
+    marginBottom: 10 
+  },
+  modalBtnRow: { 
+    flexDirection: "row", 
+    justifyContent: "flex-end", 
+    gap: 20, 
+    marginTop: 10 
+  },
 });

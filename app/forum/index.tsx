@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { collection, getDocs, orderBy, query } from "firebase/firestore";
+import { collection, orderBy, query, onSnapshot } from "firebase/firestore"; 
 import React, { useEffect, useState } from "react";
 import {
   ScrollView,
@@ -15,37 +15,34 @@ type Post = {
   title: string;
   description: string;
   authorName: string;
-  likeCount: number;
-  commentCount: number;
+  likesCount: number;    
+  commentsCount: number;
 };
 
 export default function Forum() {
   const [posts, setPosts] = useState<Post[]>([]);
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      const q = query(
-        collection(db, "forum_posts"),
-        orderBy("createdAt", "desc")
-      );
-      const snap = await getDocs(q);
-
-      const data = snap.docs.map((doc) => ({
+    const q = query(
+      collection(db, "forumPosts"),
+      orderBy("createdAt", "desc")
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...(doc.data() as any),
       }));
-
       setPosts(data);
-    };
+    });
 
-    fetchPosts();
+    return () => unsubscribe();
   }, []);
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Forum</Text>
 
-      {/* + BUTTON */}
       <TouchableOpacity
         style={styles.addBtn}
         onPress={() => router.push("/forum/create")}
@@ -67,8 +64,8 @@ export default function Forum() {
 
             <View style={styles.row}>
               <Text style={styles.meta}>{p.authorName}</Text>
-              <Text style={styles.meta}>❤️ {p.likeCount}</Text>
-              <Text style={styles.meta}>💬 {p.commentCount}</Text>
+              <Text style={styles.meta}>❤️ {p.likesCount || 0}</Text>
+              <Text style={styles.meta}>💬 {p.commentsCount || 0}</Text>
             </View>
           </TouchableOpacity>
         ))}

@@ -10,9 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-import { loginUser } from "@/lib/auth"; // 🔥 FIREBASE LOGIN
-
+import { loginUser } from "@/lib/auth"; 
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -20,7 +18,6 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  /* ===== HANDLE LOGIN ===== */
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert("Error", "Please enter email and password");
@@ -40,7 +37,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Pink Header */}
+   
       <View style={styles.header}>
         <Text style={styles.hello}>HELLO !</Text>
         <Text style={styles.subtitle}>Welcome to Truth Beauty</Text>
@@ -51,11 +48,9 @@ export default function LoginScreen() {
         />
       </View>
 
-      {/* Login Box */}
       <View style={styles.box}>
         <Text style={styles.loginTitle}>Log in</Text>
 
-        {/* Email Input */}
         <View style={styles.inputContainer}>
           <Ionicons name="mail-outline" size={20} color="#555" style={styles.icon} />
           <TextInput
@@ -69,7 +64,6 @@ export default function LoginScreen() {
           />
         </View>
 
-        {/* Password Input */}
         <View style={styles.inputContainer}>
           <Ionicons
             name="lock-closed-outline"
@@ -97,7 +91,6 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Forgot Password (UI only for now) */}
         <TouchableOpacity
   style={styles.forgotBtn}
   onPress={() => router.push("/forgot-password")}
@@ -105,8 +98,6 @@ export default function LoginScreen() {
   <Text style={styles.forgotText}>Forgot Password</Text>
 </TouchableOpacity>
 
-
-        {/* Login Button */}
         <TouchableOpacity
           style={styles.loginBtn}
           onPress={handleLogin}
@@ -132,34 +123,27 @@ export default function LoginScreen() {
   );
 }
 
-// ===========================================
-// 🎨 STYLES (UNCHANGED)
-// ===========================================
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F7FFF5",
   },
-
   header: {
     backgroundColor: "#F73C8F",
     height: 230,
     paddingTop: 100,
     paddingLeft: 30,
   },
-
   hello: {
     color: "white",
     fontSize: 38,
     fontWeight: "700",
   },
-
   subtitle: {
     color: "white",
     fontSize: 20,
     marginTop: 4,
   },
-
   floral: {
     width: 220,
     height: 230,
@@ -169,7 +153,6 @@ const styles = StyleSheet.create({
     opacity: 1.9,
     zIndex: 10,
   },
-
   box: {
     marginTop: -25,
     backgroundColor: "#f6ffe7ff",
@@ -178,14 +161,12 @@ const styles = StyleSheet.create({
     padding: 45,
     flex: 1,
   },
-
   loginTitle: {
     fontSize: 25,
     fontWeight: "700",
     color: "#F73C8F",
     marginBottom: 55,
   },
-
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -195,31 +176,25 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     height: 50,
   },
-
   icon: {
     marginRight: 10,
   },
-
   input: {
     flex: 1,
     fontSize: 15,
     color: "#333",
   },
-
   eye: {
     paddingHorizontal: 6,
   },
-
   forgotBtn: {
     alignSelf: "flex-end",
     marginBottom: 20,
   },
-
   forgotText: {
     color: "#F73C8F",
     fontSize: 12,
   },
-
   loginBtn: {
     backgroundColor: "#F73C8F",
     paddingVertical: 14,
@@ -227,19 +202,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
   },
-
   loginText: {
     color: "white",
     fontSize: 16,
     fontWeight: "600",
   },
-
   signupText: {
     textAlign: "center",
     marginTop: 20,
     color: "#555",
   },
-
   signupLink: {
     color: "#F73C8F",
     fontWeight: "700",

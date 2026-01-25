@@ -4,13 +4,12 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 
 export async function registerForPushNotifications() {
-  // 1. Cek kalau ini 'Device' sebenar (Bukan Simulator)
+
   if (!Device.isDevice) {
     console.log("Must use physical device for Push Notifications");
     return null;
   }
 
-  // 2. Minta Permission
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
 
@@ -24,18 +23,14 @@ export async function registerForPushNotifications() {
     return null;
   }
 
-  // 3. Dapatkan Token
   try {
-    // Pastikan ID ini SAMA dengan yang ada dalam app.json -> "extra" -> "eas" -> "projectId"
     const myProjectId = "3d6d0794-745c-486e-9376-8b909d313b74"; 
 
     const tokenData = await Notifications.getExpoPushTokenAsync({
       projectId: myProjectId,
     });
 
-    console.log("✅ Token Success:", tokenData.data); // Debugging
-
-    // 4. Setup Channel untuk Android
+    console.log("✅ Token Success:", tokenData.data);
     if (Platform.OS === "android") {
       await Notifications.setNotificationChannelAsync("default", {
         name: "default",
@@ -53,7 +48,6 @@ export async function registerForPushNotifications() {
   }
 }
 
-// Tambah di dalam lib/notifications.ts
 
 export async function sendPushNotification(expoPushToken: string, title: string, body: string) {
   const message = {

@@ -1,6 +1,36 @@
-# Welcome to your Expo app 👋
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## About the Project
+Truth Beauty is a mobile application developed to empower consumers to make informed decisions about their cosmetic products.This mobile application is integrated using Groq AI to decode ingredient lists instantly. Beyond analysis, it fosters a community-driven ecosystem where users can share reviews, ask advice, and verify product safety together.
+
+## Key Features
+
+### 1. AI Ingredient Analysis
+* **Instant Verdicts:** Uses Groq AI to analyze ingredient lists and categorize them as **Safe**, **Caution**, or **Avoid**.
+* **Scientific Breakdown:** Provides detailed explanations for *why* an ingredient is flagged.
+* **Quick Check:** A "Green Box" widget for rapid text-based analysis without scanning.
+
+### 2. Community & Social Hub
+* **Interactive Feed:** Users can post product reviews, questions, and findings.
+* **Engagement:** Like, comment, and reply to community threads.
+* **Expert Badges:** Highlights verified experts or active contributors within the community.
+
+### 3. User Profile & Management
+* **Personal Dashboard:** Track analysis history and saved products.
+* **Secure Authentication:** Powered by **Firebase Auth** for secure login/signup.
+* **Customization:** Edit avatars, bio, and manage app settings.
+
+
+## 🛠 Technical Stack
+
+* **Framework:** [React Native](https://reactnative.dev/) (via Expo Router)
+* **Language:** TypeScript / JavaScript
+* **Backend & Database:** [Google Firebase](https://firebase.google.com/) (Firestore, Authentication)
+* **Artificial Intelligence:** [Groq AI API](https://groq.com/) (LLM Integration)
+* **Styling:** Native StyleSheet
+* **Version Control:** Git & GitHub
+
+---
+
 
 ## Get started
 

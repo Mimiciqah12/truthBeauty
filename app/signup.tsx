@@ -9,20 +9,18 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-import { registerUser } from "@/lib/auth"; // 🔥 FIREBASE REGISTER
+import { registerUser } from "@/lib/auth"; 
+import { auth } from "@/lib/firebase"; 
+import { updateProfile } from "firebase/auth"; 
 
 export default function SignUp() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  /* ===== HANDLE SIGN UP ===== */
   const handleSignUp = async () => {
     if (!name || !email || !password || !confirmPassword) {
       Alert.alert("Error", "Please fill in all fields");
@@ -36,9 +34,21 @@ export default function SignUp() {
 
     try {
       setLoading(true);
+
       await registerUser(email, password, name);
+
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, {
+          displayName: name,
+          photoURL: `https://ui-avatars.com/api/?name=${name}&background=FF7AA2&color=fff`
+        });
+
+        await auth.currentUser.reload();
+      }
+
       Alert.alert("Success", "Account created successfully");
       router.replace("/tabs/home");
+      
     } catch (error: any) {
       Alert.alert("Sign Up Failed", error.message);
     } finally {
@@ -50,7 +60,6 @@ export default function SignUp() {
     <View style={styles.container}>
       <Text style={styles.title}>Create an Account</Text>
 
-      {/* Full Name */}
       <View style={styles.inputBox}>
         <Ionicons name="person-outline" size={18} color="#555" />
         <TextInput
@@ -62,7 +71,6 @@ export default function SignUp() {
         />
       </View>
 
-      {/* Email */}
       <View style={styles.inputBox}>
         <Ionicons name="mail-outline" size={18} color="#555" />
         <TextInput
@@ -76,7 +84,6 @@ export default function SignUp() {
         />
       </View>
 
-      {/* Password */}
       <View style={styles.inputBox}>
         <Ionicons name="lock-closed-outline" size={18} color="#555" />
         <TextInput
@@ -96,7 +103,6 @@ export default function SignUp() {
         </TouchableOpacity>
       </View>
 
-      {/* Confirm Password */}
       <View style={styles.inputBox}>
         <Ionicons name="lock-closed-outline" size={18} color="#555" />
         <TextInput
@@ -118,7 +124,6 @@ export default function SignUp() {
         </TouchableOpacity>
       </View>
 
-      {/* Sign Up Button */}
       <TouchableOpacity
         style={styles.signupBtn}
         onPress={handleSignUp}
@@ -129,7 +134,6 @@ export default function SignUp() {
         </Text>
       </TouchableOpacity>
 
-      {/* Already have account */}
       <Text style={styles.footerText}>
         Already have an account?
         <Text
@@ -150,7 +154,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     justifyContent: "center",
   },
-
   title: {
     fontSize: 28,
     fontWeight: "700",
@@ -158,7 +161,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 40,
   },
-
   inputBox: {
     flexDirection: "row",
     alignItems: "center",
@@ -169,12 +171,10 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     gap: 10,
   },
-
   input: {
     flex: 1,
     fontSize: 16,
   },
-
   signupBtn: {
     backgroundColor: "#FF4FA3",
     paddingVertical: 15,
@@ -183,19 +183,16 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
   },
-
   signupBtnText: {
     color: "white",
     fontSize: 18,
     fontWeight: "600",
   },
-
   footerText: {
     textAlign: "center",
     fontSize: 14,
     color: "#333",
   },
-
   loginText: {
     color: "#FF4FA3",
     fontWeight: "700",

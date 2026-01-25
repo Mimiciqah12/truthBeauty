@@ -6,11 +6,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-/* ✅ IMPORT TYPE */
 import { Post } from "@/types/Post";
 
-/* ✅ PROPS TYPE */
 type Props = {
   post: Post;
   onPress?: () => void;
@@ -19,7 +16,6 @@ type Props = {
 export default function CommunityPostCard({ post, onPress }: Props) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
-      {/* USER */}
       <View style={styles.userRow}>
         <Image source={{ uri: post.avatar }} style={styles.avatar} />
 
@@ -38,12 +34,10 @@ export default function CommunityPostCard({ post, onPress }: Props) {
         </View>
       </View>
 
-      {/* CONTENT */}
       <Text style={styles.content} numberOfLines={2}>
         {post.content}
       </Text>
 
-      {/* PRODUCT */}
       {post.product && (
         <View style={styles.productBox}>
           <View>
@@ -69,7 +63,6 @@ export default function CommunityPostCard({ post, onPress }: Props) {
   );
 }
 
-/* ===== STYLES ===== */
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "#fff",
@@ -78,53 +71,44 @@ const styles = StyleSheet.create({
     padding: 14,
     marginTop: 12,
   },
-
   userRow: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 8,
   },
-
   avatar: {
     width: 42,
     height: 42,
     borderRadius: 21,
     marginRight: 10,
   },
-
   nameRow: {
     flexDirection: "row",
     alignItems: "center",
   },
-
   name: {
     fontWeight: "700",
   },
-
   expertBadge: {
     backgroundColor: "#E8F5E9",
     marginLeft: 6,
     paddingHorizontal: 6,
     borderRadius: 6,
   },
-
   expertText: {
     fontSize: 10,
     fontWeight: "700",
     color: "#4CAF50",
   },
-
   time: {
     fontSize: 12,
     color: "#888",
   },
-
   content: {
     color: "#444",
     lineHeight: 20,
     marginTop: 4,
   },
-
   productBox: {
     backgroundColor: "#F7F8EC",
     borderRadius: 10,
@@ -134,22 +118,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-
   productBrand: {
     fontSize: 12,
     color: "#777",
     textTransform: "uppercase",
   },
-
   productName: {
     fontWeight: "700",
   },
-
   safety: {
     fontWeight: "700",
     fontSize: 12,
   },
-
   safe: { color: "#4CAF50" },
   caution: { color: "#FF9800" },
   avoid: { color: "#F44336" },

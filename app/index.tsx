@@ -18,7 +18,6 @@ export default function Index() {
         setChecking(false);
       });
 
-      // cleanup auth listener
       return () => unsubscribe();
     }, 2000);
 

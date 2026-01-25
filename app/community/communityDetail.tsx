@@ -14,8 +14,6 @@ import {
   KeyboardAvoidingView,
   Platform
 } from "react-native";
-
-// FIREBASE IMPORTS
 import { db, auth } from "@/lib/firebase";
 import { 
   doc, 
@@ -40,11 +38,9 @@ export default function CommunityDetail() {
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
 
-  // 1. FETCH POST DATA & LISTEN TO COMMENTS
   useEffect(() => {
     if (!id) return;
 
-    // A. Dapatkan Data Post
     const postRef = doc(db, "communityPosts", id);
     const unsubPost = onSnapshot(postRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -61,7 +57,6 @@ export default function CommunityDetail() {
       setLoading(false);
     });
 
-    // B. Dapatkan Comments
     const commentsRef = collection(db, "communityPosts", id, "comments");
     const q = query(commentsRef, orderBy("createdAt", "asc"));
     
@@ -79,7 +74,6 @@ export default function CommunityDetail() {
     };
   }, [id]);
 
-  // 2. FUNCTION: ADD COMMENT
   const handleSendComment = async () => {
     if (!newComment.trim()) return;
     if (!auth.currentUser) {
@@ -103,7 +97,6 @@ export default function CommunityDetail() {
     }
   };
 
-  // 3. FUNCTION: LIKE POST
   const handleLike = async () => {
     if (!auth.currentUser) return;
     const postRef = doc(db, "communityPosts", id as string);
@@ -131,8 +124,6 @@ export default function CommunityDetail() {
     );
   }
 
-  // --- PEMBAIKAN UTAMA: Mapping Object untuk Style ---
-  // Ini menghilangkan error TypeScript pada bahagian badge safety
   const safetyStyleMap: Record<string, any> = {
     SAFE: styles.bg_SAFE,
     CAUTION: styles.bg_CAUTION,
@@ -145,7 +136,6 @@ export default function CommunityDetail() {
         style={{flex: 1}}
     >
     <View style={styles.container}>
-      {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#333" />
@@ -155,7 +145,7 @@ export default function CommunityDetail() {
       </View>
 
       <ScrollView contentContainerStyle={{paddingBottom: 100}} showsVerticalScrollIndicator={false}>
-        {/* POST CARD */}
+    
         {post && (
             <View style={styles.postCard}>
                 <View style={styles.userRow}>
@@ -174,13 +164,10 @@ export default function CommunityDetail() {
 
                 <Text style={styles.content}>{post.content}</Text>
                 
-                {/* Product Info */}
                 {post.product && (
                     <View style={styles.productBox}>
                         <Ionicons name="flask-outline" size={16} color="#666" />
                         <Text style={styles.productText}>{post.product.brand} - {post.product.name}</Text>
-                        
-                        {/* GUNAKAN MAPPING DI SINI (Fix Error) */}
                         <View style={[
                             styles.badge, 
                             safetyStyleMap[post.product.safety] || styles.bg_CAUTION
@@ -190,7 +177,7 @@ export default function CommunityDetail() {
                     </View>
                 )}
 
-                {/* LIKE BUTTON */}
+               
                 <View style={styles.actionRow}>
                     <TouchableOpacity style={styles.likeBtn} onPress={handleLike}>
                         <Ionicons 
@@ -206,7 +193,7 @@ export default function CommunityDetail() {
             </View>
         )}
 
-        {/* COMMENTS LIST */}
+        
         <Text style={styles.sectionHeader}>Comments ({comments.length})</Text>
 
         {comments.length === 0 ? (
@@ -227,7 +214,6 @@ export default function CommunityDetail() {
         )}
       </ScrollView>
 
-      {/* INPUT BOX */}
       <View style={styles.inputContainer}>
         <TextInput
           placeholder="Add a comment..."
@@ -249,7 +235,6 @@ export default function CommunityDetail() {
   );
 }
 
-/* ===== STYLES ===== */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -274,8 +259,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: '#333',
   },
-  
-  // POST STYLES
   postCard: {
     backgroundColor: "#fff",
     marginHorizontal: 20,
@@ -330,12 +313,25 @@ const styles = StyleSheet.create({
     color: '#555',
     fontWeight: '600',
   },
-  badge: { paddingHorizontal:8, paddingVertical:4, borderRadius:6 },
-  badgeText: { fontSize: 10, color:'#fff', fontWeight:'700'},
-  bg_SAFE: { backgroundColor: '#4CAF50' },
-  bg_CAUTION: { backgroundColor: '#FF9800' },
-  bg_AVOID: { backgroundColor: '#EF5350' },
-
+  badge: { 
+    paddingHorizontal:8, 
+    paddingVertical:4, 
+    borderRadius:6 
+  },
+  badgeText: { 
+    fontSize: 10, 
+    color:'#fff', 
+    fontWeight:'700'
+  },
+  bg_SAFE: { 
+    backgroundColor: '#4CAF50' 
+  },
+  bg_CAUTION: { 
+    backgroundColor: '#FF9800' 
+  },
+  bg_AVOID: { 
+    backgroundColor: '#EF5350' 
+  },
   actionRow: {
     borderTopWidth: 1,
     borderTopColor: '#EEE',

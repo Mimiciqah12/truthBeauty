@@ -5,14 +5,12 @@ export default function GetStarted() {
   return (
     <View style={styles.container}>
 
-      {/* Logo */}
       <Image
         source={require("../assets/images/truthbeauty-logo.png")}
         style={styles.logo}
         resizeMode="contain"
       />
 
-      {/* Buttons */}
       <View style={styles.buttonContainer}>
 
         <TouchableOpacity
@@ -34,19 +32,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   logo: {
     width: 370,
     height: 240,
     marginBottom: 40,
   },
-
   buttonContainer: {
     width: "80%",
     alignItems: "center",
     gap: 20,
   },
-
   loginBtn: {
     width: "100%",
     paddingVertical: 16,
@@ -54,7 +49,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FF4FA3",
     alignItems: "center",
   },
-
   loginText: {
     fontSize: 18,
     color: "white",

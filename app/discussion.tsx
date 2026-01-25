@@ -22,13 +22,12 @@ export default function Discussion() {
 
     Alert.alert("Success", "Post created (UI only, no backend yet)");
 
-    router.push("/tabs/community"); // Go back after posting
+    router.push("/tabs/community"); 
   };
 
   return (
     <View style={styles.container}>
       
-      {/* Header */}
       <View style={styles.headerRow}>
         <TouchableOpacity onPress={() => router.push("/tabs/community")}>
           <Ionicons name="chevron-back" size={26} color="#FF7AA2" />
@@ -41,7 +40,6 @@ export default function Discussion() {
 
       <View style={styles.divider} />
 
-      {/* Title Input */}
       <Text style={styles.label}>Title</Text>
       <TextInput
         style={styles.input}
@@ -51,7 +49,6 @@ export default function Discussion() {
         onChangeText={setTitle}
       />
 
-      {/* Message Input */}
       <Text style={styles.label}>Message</Text>
       <TextInput
         style={[styles.input, styles.textArea]}
@@ -62,7 +59,6 @@ export default function Discussion() {
         multiline
       />
 
-      {/* Post Button */}
       <TouchableOpacity style={styles.postBtn} onPress={handlePost}>
         <Text style={styles.postText}>Post</Text>
       </TouchableOpacity>
@@ -77,30 +73,25 @@ const styles = StyleSheet.create({
     paddingTop: 55,
     paddingHorizontal: 20,
   },
-
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-
   title: {
     fontSize: 18,
     fontWeight: "700",
   },
-
   divider: {
     height: 1,
     backgroundColor: "#ccc",
     marginVertical: 15,
   },
-
   label: {
     fontSize: 16,
     marginBottom: 4,
     fontWeight: "600",
   },
-
   input: {
     backgroundColor: "#fff",
     borderRadius: 10,
@@ -108,12 +99,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 20,
   },
-
   textArea: {
     height: 120,
     textAlignVertical: "top",
   },
-
   postBtn: {
     backgroundColor: "#FF7AA2",
     paddingVertical: 14,
@@ -121,7 +110,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     alignItems: "center",
   },
-
   postText: {
     color: "#fff",
     fontSize: 16,

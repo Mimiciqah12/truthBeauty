@@ -1,239 +1,420 @@
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
   View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
   Alert,
-  Platform,
-  Switch // <--- Import Switch
+  ScrollView,
+  TextInput,
+  Modal,
+  Switch,
+  Linking 
 } from "react-native";
-import { signOut } from "firebase/auth";
-import { doc, getDoc, updateDoc } from "firebase/firestore"; // <--- Import updateDoc
-import { auth, db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase"; 
+import { signOut, updateProfile } from "firebase/auth";
+import { router } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
+import * as Notifications from 'expo-notifications';
+import { doc, getDoc } from "firebase/firestore"; 
 
-export default function Profile() {
-  const [userData, setUserData] = useState<any>(null);
-  const [isNotifEnabled, setIsNotifEnabled] = useState(false); // State untuk switch
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
+export default function ProfileScreen() {
+  const user = auth.currentUser;
+  const [image, setImage] = useState(user?.photoURL || null);
+  const [name, setName] = useState(user?.displayName || "User");
+  const [isEditing, setIsEditing] = useState(false);
+  const [isNotifOn, setIsNotifOn] = useState(false);
+  const [isExpert, setIsExpert] = useState(false);
+  const defaultImage = `https://ui-avatars.com/api/?name=${name}&background=FF7AA2&color=fff&size=256`;
 
   useEffect(() => {
-    fetchUserData();
-  }, []);
-
-  const fetchUserData = async () => {
-    if (auth.currentUser) {
-      const docRef = doc(db, "users", auth.currentUser.uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setUserData(data);
-        // Set switch ikut database, kalau tak ada default false
-        setIsNotifEnabled(data.notificationsEnabled ?? false);
+    (async () => {
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== 'granted') {
+        await Notifications.requestPermissionsAsync();
       }
-    }
-  };
+    })();
 
-  // --- LOGIC SWITCH NOTIFICATION ---
-  const toggleSwitch = async (value: boolean) => {
-    // 1. Ubah UI serta merta (Optimistic Update)
-    setIsNotifEnabled(value);
-
-    // 2. Simpan setting dalam Firebase
-    if (auth.currentUser) {
-        try {
-            const userRef = doc(db, "users", auth.currentUser.uid);
-            await updateDoc(userRef, {
-                notificationsEnabled: value
-            });
-            console.log("Notification setting updated:", value);
-        } catch (error) {
-            console.error("Failed to update setting", error);
-            // Kalau gagal, revert balik switch
-            setIsNotifEnabled(!value);
-            Alert.alert("Error", "Failed to update settings. Check your connection.");
+    const checkExpertStatus = async () => {
+        if (user?.uid) {
+            const docRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists() && docSnap.data().isExpert === true) {
+                setIsExpert(true);
+            }
         }
+    };
+    checkExpertStatus();
+
+  }, [user]);
+
+  const handleRequestExpert = async () => {
+      if (isExpert) {
+          Alert.alert("Verified", "You are already a verified Expert! 👨‍⚕️");
+          return;
+      }
+
+      Alert.alert(
+          "Apply as Expert",
+          "To become a verified expert, you need to email us your credentials (Certificate/Medical ID).\n\nWe will open your email app now.",
+          [
+              { text: "Cancel", style: "cancel" },
+              { 
+                  text: "Proceed to Email", 
+                  onPress: () => {
+                      const subject = `Expert Verification Request - ${name}`;
+                      const body = `Hi Truth Beauty Admin,\n\nI would like to apply as an Expert.\n\nMy User ID: ${user?.uid}\n\n(Please attach your medical certificate or student ID below for verification)`;
+                      const mailUrl = `mailto:admin@truthbeauty.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                      
+                      Linking.openURL(mailUrl).catch(err => 
+                          Alert.alert("Error", "Could not open email app. Please email admin@truthbeauty.com manually.")
+                      );
+                  } 
+              }
+          ]
+      );
+  };
+
+  const handleToggleSwitch = async (value: boolean) => {
+    setIsNotifOn(value);
+    if (value === true) {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Truth Beauty 💖",
+          body: "Notifications are now active! You will receive latest updates.",
+        },
+        trigger: null,
+      });
     }
   };
 
-  // --- LOGIC LOGOUT ---
-  const handleLogoutPress = () => {
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert("Permission needed", "Please allow access to your gallery to change photo.");
+      return;
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      const newUri = result.assets[0].uri;
+      setImage(newUri);
+      if (user) await updateProfile(user, { photoURL: newUri });
+    }
+  };
+
+  const handleLogout = async () => {
     Alert.alert(
-      "Log Out",
-      "Are you sure you want to log out?",
+      "Sign Out",
+      "Do you want to sign out from Truth Beauty?",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Yes, Log Out",
+          text: "Yes, Sign Out",
           style: "destructive",
           onPress: async () => {
-            try {
-              await signOut(auth);
-              router.replace("/login");
-            } catch (error) {
-              Alert.alert("Error", "Failed to log out");
-            }
+            await signOut(auth);
+            router.replace("/");
           },
         },
       ]
     );
   };
 
-  // Kita asingkan Notification dari menu biasa sebab UI dia lain (ada Switch)
-  const menuItems = [
-    {
-      label: "Edit Profile",
-      icon: "person-outline",
-      color: "#FF7AA2",
-      bg: "#FFF0F5",
-      action: () => router.push("/edit-profile" as any),
-    },
-    {
-      label: "Ingredient History",
-      icon: "time-outline",
-      color: "#2196F3",
-      bg: "#E3F2FD",
-      action: () => router.push("/profile/history" as any),
-    },
-  ];
+  const handleSaveName = async () => {
+      if(user && name.trim()) {
+          await updateProfile(user, { displayName: name });
+          setIsEditing(false);
+          Alert.alert("Success", "Name updated!");
+      }
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.container}>
+      
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>My Profile</Text>
+      </View>
+
+      <View style={styles.profileCard}>
+        <View style={styles.avatarContainer}>
+            <Image source={{ uri: image || defaultImage }} style={styles.avatar} />
+            <TouchableOpacity style={styles.camIcon} onPress={pickImage}>
+                <Text style={{fontSize: 16}}>📷</Text>
+            </TouchableOpacity>
+        </View>
+
+        <Text style={styles.name}>
+            {name} 
+            {isExpert && <Text style={{fontSize: 18}}> ✅</Text>}
+        </Text>
         
-        {/* HEADER */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Profile</Text>
-        </View>
+        {isExpert ? (
+             <Text style={styles.expertLabel}>Verified Expert</Text>
+        ) : (
+             <Text style={styles.email}>{user?.email}</Text>
+        )}
 
-        {/* PROFILE CARD */}
-        <View style={styles.profileCard}>
-          <Image
-            source={{
-              uri: userData?.photoURL || auth.currentUser?.photoURL || "https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png",
-            }}
-            style={styles.avatar}
-          />
-          <View style={styles.info}>
-            <Text style={styles.name}>
-              {userData?.username || userData?.name || auth.currentUser?.displayName || "User"}
-            </Text>
-            <Text style={styles.email}>{auth.currentUser?.email}</Text>
-            {userData?.isExpert && (
-                <View style={styles.expertBadge}>
-                    <Ionicons name="checkmark-circle" size={14} color="#FFF" />
-                    <Text style={styles.expertText}>Verified Expert</Text>
-                </View>
-            )}
-          </View>
-        </View>
+        <TouchableOpacity style={styles.editBtn} onPress={() => setIsEditing(true)}>
+            <Text style={styles.editBtnText}>Edit Name</Text>
+        </TouchableOpacity>
+      </View>
 
-        {/* MENU OPTIONS */}
-        <View style={styles.menuContainer}>
-          {/* Loop Menu Biasa (Link) */}
-          {menuItems.map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.menuItem}
-              onPress={item.action}
+      <View style={styles.menuContainer}>
+       
+        {!isExpert && (
+            <TouchableOpacity 
+                style={[styles.menuItem, { backgroundColor: '#F0F8FF' }]}
+                onPress={handleRequestExpert}
             >
-              <View style={styles.menuLeft}>
-                <View style={[styles.iconBox, { backgroundColor: item.bg }]}>
-                  <Ionicons name={item.icon as any} size={22} color={item.color} />
-                </View>
-                <Text style={styles.menuText}>{item.label}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#CCC" />
+                <Text style={[styles.menuText, { color: '#007AFF' }]}>👨‍⚕️  Apply to be an Expert</Text>
+                <Text style={styles.arrow}>›</Text>
             </TouchableOpacity>
-          ))}
+        )}
 
-          {/* Special Menu Item: NOTIFICATIONS (Dengan Switch) */}
-          <View style={[styles.menuItem, { borderBottomWidth: 0 }]}>
-              <View style={styles.menuLeft}>
-                <View style={[styles.iconBox, { backgroundColor: "#F3E5F5" }]}>
-                  <Ionicons name="notifications-outline" size={22} color="#9C27B0" />
-                </View>
-                <View>
-                    <Text style={styles.menuText}>News & Updates</Text>
-                    <Text style={styles.subText}>Get notified about latest trends</Text>
-                </View>
+        <TouchableOpacity 
+          style={styles.menuItem} 
+          onPress={() => router.push("/favourite")}
+        >
+            <Text style={styles.menuText}>💖  My Favorites</Text>
+            <Text style={styles.arrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={() => router.push("/profile/history")} 
+        >
+            <Text style={styles.menuText}>🧪  Ingredient History</Text>
+            <Text style={styles.arrow}>›</Text>
+        </TouchableOpacity>
+
+        <View style={styles.menuItemNoClick}>
+            <Text style={styles.menuText}>🔔  Notifications</Text>
+            <Switch 
+                value={isNotifOn}
+                onValueChange={handleToggleSwitch} 
+                trackColor={{ false: "#e0e0e0", true: "#FFB6C1" }}
+                thumbColor={isNotifOn ? "#FF7AA2" : "#f4f3f4"}
+            />
+        </View>
+
+      </View>
+
+      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+        <Text style={styles.logoutText}>Log Out</Text>
+      </TouchableOpacity>
+
+      <Modal visible={isEditing} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+              <View style={styles.modalCard}>
+                  <Text style={styles.modalTitle}>Change Name</Text>
+                  <TextInput 
+                    value={name} 
+                    onChangeText={setName} 
+                    style={styles.input} 
+                    autoFocus
+                  />
+                  <View style={styles.modalBtnRow}>
+                      <TouchableOpacity onPress={() => setIsEditing(false)}>
+                          <Text style={styles.cancelText}>Cancel</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={handleSaveName}>
+                          <Text style={styles.saveText}>Save</Text>
+                      </TouchableOpacity>
+                  </View>
               </View>
-              
-              {/* SWITCH COMPONENT */}
-              <Switch
-                trackColor={{ false: "#E0E0E0", true: "#FF7AA2" }}
-                thumbColor={isNotifEnabled ? "#fff" : "#f4f3f4"}
-                ios_backgroundColor="#3e3e3e"
-                onValueChange={toggleSwitch}
-                value={isNotifEnabled}
-              />
           </View>
-        </View>
+      </Modal>
 
-        {/* LOGOUT BUTTON */}
-        <View style={styles.logoutContainer}>
-            <TouchableOpacity style={styles.logoutBtn} onPress={handleLogoutPress}>
-            <Ionicons name="log-out-outline" size={20} color="#FFF" />
-            <Text style={styles.logoutText}>Log Out</Text>
-            </TouchableOpacity>
-        </View>
-
-      </ScrollView>
-    </SafeAreaView>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F7F8EC" },
-  header: { padding: 20, paddingTop: Platform.OS === 'android' ? 40 : 20 },
-  headerTitle: { fontSize: 24, fontWeight: "800", color: "#333" },
-
-  profileCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFF",
-    marginHorizontal: 20,
-    borderRadius: 20,
+  container: {
+    flex: 1,
+    backgroundColor: "#F9FAF4",
+  },
+  header: {
     padding: 20,
+    paddingTop: 60,
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#333",
+  },
+  profileCard: {
+    alignItems: "center",
+    backgroundColor: "#fff",
+    marginHorizontal: 20,
+    marginTop: 10,
     marginBottom: 25,
+    padding: 30,
+    borderRadius: 24,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 10,
     elevation: 3,
   },
-  avatar: { width: 70, height: 70, borderRadius: 35, marginRight: 16, backgroundColor: '#EEE' },
-  info: { flex: 1 },
-  name: { fontSize: 18, fontWeight: "700", color: "#333", marginBottom: 4 },
-  email: { fontSize: 14, color: "#888", marginBottom: 6 },
-  expertBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#4CAF50', alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, gap: 4 },
-  expertText: { color: '#FFF', fontSize: 10, fontWeight: '700' },
-
-  menuContainer: { backgroundColor: "#FFF", marginHorizontal: 20, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5, elevation: 2 },
-  menuItem: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 16, paddingHorizontal: 10, borderBottomWidth: 1, borderBottomColor: "#F5F5F5" },
-  menuLeft: { flexDirection: "row", alignItems: "center" },
-  iconBox: { width: 40, height: 40, borderRadius: 12, justifyContent: "center", alignItems: "center", marginRight: 14 },
-  menuText: { fontSize: 16, fontWeight: "600", color: "#333" },
-  subText: { fontSize: 11, color: "#999", marginTop: 2 },
-
-  logoutContainer: { padding: 20, marginTop: 10 },
-  logoutBtn: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    justifyContent: "center", 
-    backgroundColor: "#FF4D4D", 
-    paddingVertical: 16,
-    borderRadius: 16,
-    gap: 8,
-    shadowColor: "#FF4D4D",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: 15,
   },
-  logoutText: { fontSize: 16, fontWeight: "700", color: "#FFF" },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#f0f0f0",
+  },
+  camIcon: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#eee',
+    elevation: 2,
+  },
+  name: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 2,
+  },
+  email: {
+    fontSize: 14,
+    color: "#888",
+    marginBottom: 16,
+  },
+  expertLabel: {
+    fontSize: 14,
+    color: "#4CAF50",
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  editBtn: {
+    backgroundColor: "#FFF0F5",
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  editBtnText: {
+    color: "#FF7AA2",
+    fontWeight: "600",
+    fontSize: 13,
+  },
+  menuContainer: {
+    paddingHorizontal: 20,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    padding: 18,
+    marginBottom: 12,
+    borderRadius: 18,
+    alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    elevation: 1,
+  },
+  menuItemNoClick: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    padding: 18,
+    marginBottom: 12,
+    borderRadius: 18,
+    alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    elevation: 1,
+  },
+  menuText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#444',
+  },
+  arrow: {
+    fontSize: 20,
+    color: '#ccc',
+  },
+  logoutBtn: {
+    margin: 20,
+    marginTop: 10,
+    backgroundColor: "#FFE5E5",
+    padding: 18,
+    borderRadius: 18,
+    alignItems: "center",
+  },
+  logoutText: {
+    color: "#D92D20",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCard: {
+    width: '80%',
+    backgroundColor: '#fff',
+    padding: 25,
+    borderRadius: 24,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 20,
+  },
+  input: {
+    backgroundColor: '#f9f9f9',
+    width: '100%',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 20,
+    fontSize: 16,
+  },
+  modalBtnRow: {
+    flexDirection: 'row',
+    gap: 40,
+  },
+  cancelText: {
+    color: '#999',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  saveText: {
+    color: '#FF7AA2',
+    fontSize: 16,
+    fontWeight: '700',
+  },
 });

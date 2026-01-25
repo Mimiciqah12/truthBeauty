@@ -10,7 +10,6 @@ import {
   View,
   Alert,
 } from "react-native";
-
 import {
   addDoc,
   collection,
@@ -23,7 +22,6 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 
-/* ===== TYPES ===== */
 type Review = {
   id: string;
   username: string;
@@ -40,7 +38,6 @@ export default function ProductDetail() {
   const [comment, setComment] = useState("");
   const [rating, setRating] = useState(5);
 
-  /* 🔥 FETCH PRODUCT */
   useEffect(() => {
     if (!id) return;
 
@@ -54,7 +51,6 @@ export default function ProductDetail() {
     loadProduct();
   }, [id]);
 
-  /* 🔥 FETCH REVIEWS (REAL-TIME) */
   useEffect(() => {
     if (!id) return;
 
@@ -74,7 +70,6 @@ export default function ProductDetail() {
     return () => unsub();
   }, [id]);
 
-  /* 📝 ADD REVIEW */
   const submitReview = async () => {
     if (!auth.currentUser) {
       Alert.alert("Login required", "Please login to write a review");
@@ -112,15 +107,10 @@ export default function ProductDetail() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* BACK */}
       <TouchableOpacity onPress={() => router.back()}>
         <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
-
-      {/* IMAGE */}
       <Image source={{ uri: product.image }} style={styles.image} />
-
-      {/* INFO */}
       <View style={styles.card}>
         <Text style={styles.title}>{product.name}</Text>
         <Text style={styles.brand}>{product.brand}</Text>
@@ -132,7 +122,6 @@ export default function ProductDetail() {
         <Text style={styles.text}>{product.safety}</Text>
       </View>
 
-      {/* ADD REVIEW */}
       <View style={styles.reviewBox}>
         <Text style={styles.sectionTitle}>Write a Review</Text>
 
@@ -159,7 +148,6 @@ export default function ProductDetail() {
         </TouchableOpacity>
       </View>
 
-      {/* REVIEWS */}
       <Text style={styles.sectionTitle}>User Reviews</Text>
 
       {reviews.map((r) => (
@@ -175,7 +163,6 @@ export default function ProductDetail() {
   );
 }
 
-/* ===== STYLES ===== */
 const styles = StyleSheet.create({
   container: {
     flex: 1,

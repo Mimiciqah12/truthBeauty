@@ -48,7 +48,7 @@ export default function ProductCard({
 
   return (
     <View style={styles.card}>
-      {/* ===== HEADER ===== */}
+  
       <View style={styles.headerRow}>
         <View style={styles.imageWrapper}>
           <Image source={image} style={styles.image} />
@@ -60,7 +60,6 @@ export default function ProductCard({
             {name}
           </Text>
 
-          {/* ⭐ Rating + Recommend */}
           {(rating > 0 || recommendPct > 0) && (
             <View style={styles.ratingRow}>
               {rating > 0 && (
@@ -84,14 +83,12 @@ export default function ProductCard({
             </View>
           )}
 
-          {/* Safety Badge */}
           <View style={[styles.badge, { backgroundColor: levelColor }]}>
             <Text style={styles.badgeText}>{overallLevel}</Text>
           </View>
         </View>
       </View>
 
-      {/* ===== EXPAND ===== */}
       <TouchableOpacity
         style={styles.expandBtn}
         onPress={() => setExpanded(!expanded)}
@@ -105,7 +102,6 @@ export default function ProductCard({
         />
       </TouchableOpacity>
 
-      {/* ===== INGREDIENT LIST ===== */}
       {expanded &&
         ingredients.map((ing, idx) => (
           <View key={idx} style={styles.ingredientRow}>

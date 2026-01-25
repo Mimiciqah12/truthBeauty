@@ -10,89 +10,65 @@ import {
   View,
 } from "react-native";
 
-/* 🔥 ANALYSIS + FIREBASE */
-import { auth, db } from "@/lib/firebase";
-import { analyseIngredient } from "@/lib/ingredientRules";
-import { addDoc, collection, Timestamp } from "firebase/firestore";
-
 export default function IngredientQuickCheck() {
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [language, setLanguage] = useState<'en' | 'ms'>('en'); 
 
-  /* ===== HANDLE ANALYZE ===== */
-  const handleAnalyze = async () => {
+  const handleAnalyze = () => {
     if (!query.trim()) {
-      Alert.alert("Empty Input", "Please enter ingredients to analyze");
+      Alert.alert(language === 'ms' ? "Input Kosong" : "Empty Input");
       return;
     }
 
-    try {
-      setLoading(true);
-
-      // ✅ ANALYSE INGREDIENT (LOGIC)
-      const result = analyseIngredient(query);
-
-      // ✅ SAVE AS HISTORY (OPTIONAL, SAFE)
-      if (auth.currentUser) {
-        await addDoc(collection(db, "ingredientAnalysis"), {
-          userId: auth.currentUser.uid,
-          input: query,
-          overallLevel: result.overallLevel,
-          ingredients: result.ingredients,
-          createdAt: Timestamp.now(),
-        });
-      }
-
-      // ✅ GO TO RESULT PAGE
-      router.push({
-        pathname: "/ingredient-result",
-        params: { q: query },
-      });
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "Failed to analyze ingredient");
-    } finally {
-      setLoading(false);
-    }
+    router.push({
+      pathname: "/ingredient-result",
+      params: { q: query, lang: language }, 
+    });
   };
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Check Your Ingredients</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 6 }}>
+          <Text style={styles.title}>
+            {language === 'en' ? "Check Your Ingredients" : "Semak Bahan Anda"}
+          </Text>
+
+          <TouchableOpacity 
+            style={styles.langBtn} 
+            onPress={() => setLanguage(prev => prev === 'en' ? 'ms' : 'en')}
+          >
+            <Text style={styles.langText}>{language === 'en' ? "EN" : "BM"}</Text>
+            <Ionicons name="globe-outline" size={12} color="#333" style={{marginLeft:2}}/>
+          </TouchableOpacity>
+      </View>
 
       <Text style={styles.subtitle}>
-        Paste ingredients or search to understand what you're putting on your skin.
+        {language === 'en' 
+           ? "Paste ingredients to understand what's on your skin."
+           : "Tampal bahan untuk fahami apa yang ada pada kulit anda."}
       </Text>
 
       <View style={styles.inputRow}>
         <Ionicons name="search-outline" size={20} color="#9AA38F" />
 
         <TextInput
-          placeholder="e.g. Retinol, Fragrance, Parabens..."
+          placeholder={language === 'en' ? "e.g. Retinol, Fragrance..." : "cth. Retinol, Pewangi..."}
           placeholderTextColor="#A3A3A3"
           value={query}
           onChangeText={setQuery}
           style={styles.input}
         />
 
-        <TouchableOpacity
-          style={styles.analyzeBtn}
-          onPress={handleAnalyze}
-          disabled={loading}
-        >
+        <TouchableOpacity style={styles.analyzeBtn} onPress={handleAnalyze}>
           <Text style={styles.analyzeText}>
-            {loading ? "Analyzing..." : "Analyze"}
+            {language === 'en' ? "Analyze" : "Analisis"}
           </Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.tagsRow}>
         {["Retinol", "Sulfates", "Fragrance"].map((item) => (
-          <TouchableOpacity
-            key={item}
-            style={styles.tag}
-            onPress={() => setQuery(item)}
-          >
+          <TouchableOpacity key={item} style={styles.tag} onPress={() => setQuery(item)}>
             <Text style={styles.tagText}>{item}</Text>
           </TouchableOpacity>
         ))}
@@ -101,10 +77,9 @@ export default function IngredientQuickCheck() {
   );
 }
 
-/* ===== STYLES (UNCHANGED) ===== */
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#e4ebc3",
+    backgroundColor: "#d0dd91ff",
     marginHorizontal: 20,
     borderRadius: 18,
     padding: 18,
@@ -114,18 +89,18 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
     textAlign: "center",
-    marginBottom: 6,
+    color: "#2D2D2D",
   },
   subtitle: {
     textAlign: "center",
-    color: "#777",
+    color: "#555",
     fontSize: 14,
     marginBottom: 18,
   },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f6f1f1f8",
+    backgroundColor: "#FFF",
     borderRadius: 30,
     paddingHorizontal: 15,
     paddingVertical: 12,
@@ -152,15 +127,31 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   tag: {
-    borderWidth: 1,
-    borderColor: "#6a6e62ff",
+    backgroundColor: "#FFF",
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
   },
   tagText: {
     color: "#35472bff",
     fontSize: 13,
-    fontWeight: "500",
+    fontWeight: "600",
+  },
+  langBtn: {
+    position: 'absolute',
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  langText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#333',
   },
 });

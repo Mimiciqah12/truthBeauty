@@ -9,7 +9,6 @@ import {
   View,
   ActivityIndicator
 } from "react-native";
-
 import { auth, db } from "@/lib/firebase";
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
 
@@ -49,7 +48,6 @@ export default function HistoryScreen() {
 
   return (
     <View style={styles.container}>
-      {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#333" />
@@ -72,10 +70,6 @@ export default function HistoryScreen() {
             <TouchableOpacity 
               style={styles.card}
               onPress={() => {
-                // Navigasi semula ke page result, tapi kali ini kita pass data terus
-                // Supaya tak payah fetch AI lagi (JIMAT KUOTA)
-                // Note: Anda mungkin perlu ubah sikit IngredientResult untuk terima 'data' direct
-                // Tapi untuk sekarang, kita just search balik keyword dia
                 router.push({
                     pathname: "/ingredient-result",
                     params: { q: item.ingredientName }
@@ -101,14 +95,57 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F7F8EC" },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 20, paddingTop: 50, backgroundColor: "#fff" },
-  headerTitle: { fontSize: 18, fontWeight: "700" },
-  backBtn: { padding: 5 },
-  card: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: "#fff", padding: 16, borderRadius: 12, marginBottom: 10 },
-  name: { fontSize: 16, fontWeight: "700", textTransform: "capitalize", marginBottom: 4 },
-  date: { fontSize: 12, color: "#888" },
-  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  badgeText: { color: "#fff", fontSize: 12, fontWeight: "700" },
-  empty: { textAlign: "center", marginTop: 50, color: "#888" }
+  container: {
+    flex: 1,
+    backgroundColor: "#F7F8EC",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    paddingTop: 50,
+    backgroundColor: "#fff",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  backBtn: {
+    padding: 5,
+  },
+  card: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 10,
+  },
+  name: {
+    fontSize: 16,
+    fontWeight: "700",
+    textTransform: "capitalize",
+    marginBottom: 4,
+  },
+  date: {
+    fontSize: 12,
+    color: "#888",
+  },
+  badge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  empty: {
+    textAlign: "center",
+    marginTop: 50,
+    color: "#888",
+  },
 });
